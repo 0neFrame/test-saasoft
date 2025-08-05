@@ -8,11 +8,13 @@ import TableAccountList from "@/components/TableAccountList.vue"
 const accountList = reactive<AccountWithChecks[]>(
    useAccountStore().accounts.map((item: Account) => {
       if (item) {
-         return { ...item, errors: AccountModel.createAccountErrors(), labelText: stringifyLabels(item.labels) }
+         return { ...item, errors: AccountModel.createAccountErrors(false), labelText: stringifyLabels(item.labels), validLength: AccountModel.createAccountFieldLength() }
       }
    }) as AccountWithChecks[]
 )
 function addItem() {
+   if (accountList.some((acc) => Object.values(acc.errors).some((err) => err))) return
+
    accountList.push(AccountModel.createAccountWithChecks())
    useAccountStore().addAccount(AccountModel.createAccount())
 }

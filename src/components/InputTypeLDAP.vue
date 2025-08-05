@@ -13,5 +13,5 @@ model.password = null
 </script>
 
 <template>
-   <v-text-field v-model="model.login" :error="model.errors.login" @blur="emit('updateItem', { item: model, keyName: 'login' })"></v-text-field>
+   <v-text-field v-model="model.login" :error="model.errors.login" @blur="emit('updateItem', model)"></v-text-field>
 </template>

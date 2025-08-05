@@ -5,17 +5,16 @@ export interface Label {
    text: string
 }
 
-interface AccountErrors {
+export interface AccountErrors {
    labelText: boolean
-   type: boolean
    login: boolean
    password: boolean
 }
 
-export interface AccountValid {
-   item: AccountWithChecks
-   keyName: keyof AccountErrors
-   validLength?: number
+interface AccountFieldLength {
+   labelText: number
+   login: number
+   password: number
 }
 
 export interface Account {
@@ -28,6 +27,7 @@ export interface Account {
 export interface AccountWithChecks extends Account {
    labelText: string
    errors: AccountErrors
+   validLength: AccountFieldLength
 }
 
 export class AccountModel {
@@ -45,15 +45,23 @@ export class AccountModel {
          ...this.createAccount(),
          errors: this.createAccountErrors(),
          labelText: "",
+         validLength: this.createAccountFieldLength(),
       }
    }
 
-   static createAccountErrors(): AccountErrors {
+   static createAccountErrors(required: boolean = true): AccountErrors {
       return {
          labelText: false,
-         type: false,
-         login: false,
-         password: false,
+         login: required,
+         password: required,
+      }
+   }
+
+   static createAccountFieldLength(): AccountFieldLength {
+      return {
+         labelText: 50,
+         login: 100,
+         password: 100,
       }
    }
 }

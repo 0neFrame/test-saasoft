@@ -13,7 +13,7 @@ const model = reactive<AccountWithChecks>(props.item)
 
 <template>
    <div class="d-flex gap">
-      <v-text-field v-model="model.login" :error="model.errors.login" @blur="emit('updateItem', { item: model, keyName: 'login' })"></v-text-field>
-      <v-text-field v-model="model.password" :error="model.errors.password" type="password" @blur="emit('updateItem', { item: model, keyName: 'password' })"></v-text-field>
+      <v-text-field v-model="model.login" :error="model.errors.login" @blur="emit('updateItem', model)"></v-text-field>
+      <v-text-field v-model="model.password" :error="model.errors.password" type="password" @blur="emit('updateItem', model)"></v-text-field>
    </div>
 </template>

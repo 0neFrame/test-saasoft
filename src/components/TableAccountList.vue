@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { useAccountStore } from "@/stores/account"
-import { type AccountValid, type AccountWithChecks } from "@/models/Account"
+import { type AccountErrors, type AccountWithChecks } from "@/models/Account"
 
 import InputTypeLocale from "@/components/InputTypeLocale.vue"
 import InputTypeLDAP from "@/components/InputTypeLDAP.vue"
+import { ref, toValue } from "vue"
 
 const inputTypeList = {
    Локальная: InputTypeLocale,
@@ -12,9 +13,32 @@ const inputTypeList = {
 
 const accountList = defineModel<AccountWithChecks[]>({ required: true })
 
-function validationRule(item: AccountWithChecks, keyName: keyof AccountWithChecks, validLength: number): boolean {
-   const value = item[keyName]
-   return typeof value === "string" && value.length > validLength
+function checkValidation(item: AccountWithChecks): AccountErrors {
+   type AccountErrorsKeys = keyof AccountErrors
+
+   const itemErrors = ref<AccountErrors>({ labelText: false, login: false, password: false })
+   const nameErrors = Object.keys(item.errors) as AccountErrorsKeys[]
+
+   nameErrors.forEach((errKey) => {
+      const value = item[errKey]
+
+      const isKeyPass = errKey === "password"
+      const isKeyLoginOrPass = errKey === "login" || isKeyPass
+      const isStringValue = typeof value === "string"
+      const isTypeLocal = item.type === "Локальная"
+
+      const invalidLength = isStringValue && value.length > item.validLength[errKey]
+
+      if (isKeyLoginOrPass && isStringValue) {
+         itemErrors.value[errKey] = !value.length || invalidLength
+      } else if (isTypeLocal && isKeyPass) {
+         itemErrors.value[errKey] = value === null || invalidLength
+      } else {
+         itemErrors.value[errKey] = invalidLength
+      }
+   })
+
+   return toValue(itemErrors)
 }
 function parseLabels(item: AccountWithChecks) {
    if (!item.labelText.trim()) {
@@ -32,9 +56,8 @@ function deleteItem(id: number) {
    accountList.value.splice(id, 1)
    useAccountStore().removeAccount(id)
 }
-function updateItem(id: number, event: AccountValid) {
-   const { item, keyName, validLength = 100 } = event
-   item.errors[keyName] = validationRule(item, keyName, validLength)
+function updateItem(id: number, item: AccountWithChecks) {
+   item.errors = checkValidation(item)
 
    if (Object.values(item.errors).every((check) => !check)) {
       const { labels, type, login, password } = item
@@ -67,20 +90,15 @@ function updateItem(id: number, event: AccountValid) {
       <div class="table-tbody">
          <div v-for="(item, itemKey) in accountList" :key="itemKey" class="table-tr">
             <div v-if="item" class="table-th">
-               <v-text-field
-                  v-model:model-value="item.labelText"
-                  :error="item.errors.labelText"
-                  @update:model-value="parseLabels(item)"
-                  @blur="updateItem(itemKey, { item, keyName: 'labelText', validLength: 50 })"
-               ></v-text-field>
+               <v-text-field v-model:model-value="item.labelText" :error="item.errors.labelText" @update:model-value="parseLabels(item)" @blur="updateItem(itemKey, item)"></v-text-field>
             </div>
 
             <div v-if="item" class="table-td">
-               <v-select v-model="item.type" :items="['Локальная', 'LDAP']" @update:modelValue="updateItem(itemKey, { item, keyName: 'type' })"></v-select>
+               <v-select v-model="item.type" :items="['Локальная', 'LDAP']" @update:modelValue="updateItem(itemKey, item)"></v-select>
             </div>
 
             <div v-if="item" class="table-td">
-               <component :is="inputTypeList[item.type]" :item="item" @updateItem="(event: AccountValid) => updateItem(itemKey, event)"></component>
+               <component :is="inputTypeList[item.type]" :item="item" @updateItem="updateItem(itemKey, $event)"></component>
             </div>
 
             <div class="table-td icon"><v-btn icon="mdi-delete" variant="text" @click="deleteItem(itemKey)"></v-btn></div>

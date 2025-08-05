@@ -8,7 +8,7 @@ export const useAccountStore = defineStore("account", {
    actions: {
       addAccount(account: Account) {
          this.accounts.push(account)
-         this.saveToLocalStorage()
+         // this.saveToLocalStorage()
       },
       saveAccount(id: number, account: Account) {
          this.accounts[id] = account
